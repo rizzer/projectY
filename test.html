@@ -1,0 +1,210 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>shape thing</title>
+
+<script type="text/javascript" src="../danzen.js"></script>
+<script type="text/javascript" src="http://code.createjs.com/createjs-2013.12.12.min.js"></script>
+<script src="4objectsbackup.js"></script>
+
+<script>
+
+var stage, // create var to hold create js stage 
+	shapes = [], //create var to hold array of shapes	
+	slots = [],		//create var to hold array of slots
+	score = 0,		//create var to hold score
+	U,	 //create var to hold flashmade circle
+	octagon,
+	cross,
+	circle;
+
+function init(){	//declare initialization function
+	stage = new createjs.Stage('canvas');	//make new createjs stage and add to canvas
+	buildShapes();	//fire buildShapes function
+	randomizeBlockPosition();	//fire shapes position randomizer function
+	startGame();	//fire startGame function
+	//U = new lib.U();
+	//octagon = new lib.octagon();
+	//cross = new lib.cross();
+	//circle = new lib.circle();		//say exportRoot is lib.Untitled2 from circle.js
+	//stage.addChild(U);
+	//stage.addChild(octagon);
+	//stage.addChild(cross);
+	//stage.addChild(circle);
+
+}
+function getRandomColor() {
+	var letters = '0123456789ABCDEF'.split('');
+	var letter;
+	var color = "#";
+	for(var i = 0; i < 6; i++){
+		letter = letters[Math.floor(Math.random() * 16)];
+		color += letter;
+	}
+	
+	return color;
+}
+function buildShapes(){
+	var colors = ['rect', 'circle', 'star', 'roundrect'],
+	i,
+	shape,
+	slot;
+	for ( i = 0; i < colors.length; i++){
+		var color = getRandomColor();
+		slot= new createjs.Shape();
+		slot.graphics.beginStroke(color);
+		slot.graphics.beginFill("000000");
+
+		switch (i){
+			case i = 0:
+				slot.graphics.drawRect(0, 0, 100, 100);
+				slot.regX = slot.regY = 50;
+				break;
+			case i = 1:
+				slot.graphics.drawCircle(0, 0, 50);
+				slot.regX = slot.regY = 0;
+				break;
+			case i = 2:
+				slot.graphics.drawPolyStar(0, 0, 50, 6, 0.6, -90);
+				slot.regX = slot.regY = 0;
+				break;
+			case i = 3:
+				slot.graphics.drawRoundRect(0, 0, 100, 100, 25);
+				slot.regX = slot.regY = 50;
+				break;
+		}
+		//slot.key = i;
+		slot.name = 'slot' + i;
+		slot.y = 80;
+		slot.x = (i * 130) + 100;
+		stage.addChild(slot);
+		slots.push(slot);
+
+		var shape = new createjs.Shape();
+		// shape.mycolor = color;
+		// shape.graphics.beginFill(color);
+		
+		switch (i){
+			case i = 0:
+				// shape.graphics.drawRect(0, 0, 100, 100);
+				shape = new lib.U(color);
+				//shape = new createjs.Shape(asd);
+				// stage.addChild(asd);
+				// shape.instance = new lib.U();
+				shape.regX = shape.regY = 50;
+				break;
+			case i = 1:
+				// shape.graphics.drawCircle(0, 0, 50);
+				shape = new lib.cross(color);
+				shape.regX = shape.regY = 0;
+				break;
+			case i = 2:
+				// shape.graphics.drawPolyStar(0, 0, 50, 6, 0.6, -90);
+				shape = new lib.circle(color);
+				shape.regX = shape.regY = 0;
+				break;
+			case i = 3:
+				// shape.graphics.drawRoundRect(0, 0, 100, 100, 25);
+				shape = new lib.octagon(color);
+				shape.regX = shape.regY = 50;
+				break;
+		}
+
+		shape.key = i;
+		shape.name = 'shape' + i;
+		shapes.push(shape);
+		stage.update(); 
+	}
+}
+
+
+
+		//var diffX = 0;
+		function startMove(e){
+			e.target.diffX = e.stageX - e.target.x;
+			e.target.diffY = e.stageY - e.target.y;
+			zog(e.target.diffX);
+			stage.addChild(e.target);
+
+		}
+
+function randomizeBlockPosition(){
+	var i,
+		r,
+		shape,
+		l = shapes.length;
+	for( i = 0; i < l; i++ ){
+		r = Math.floor(Math.random() * shapes.length);
+		shape = shapes[r];
+		shape.homeY = 320;
+		shape.homeX = (i * 130) + 100;
+		shape.y = shape.homeY;
+		shape.x = shape.homeX;
+		shape.addEventListener('mousedown', startDrag);
+		//shape.addEventListener("mousedown", startMove);
+		stage.addChild(shape);
+		shapes.splice(r, 1);
+		stage.update(); 
+	}
+}  
+/**
+ * Game logic:
+ * Drag and drop the shapes,
+ * test if they are over a suitable slot,
+ * if yes, place them in slot and count up,
+ * if no, remove them to their home place.
+ *
+ * @param {event} e - mousedown event
+ */
+
+function startDrag(e){
+	var shape = e.target,
+	slot = slots[shape.key];
+	//shape.diffX = e.stageX - shape.x;
+	//shape.diffY = e.stageY - shape.y;
+	shape.x = e.stageX;
+	shape.y = e.stageY;
+	//console.log(e.target.diffX);
+	stage.addChild(e.target);
+	stage.setChildIndex(shape, stage.getNumChildren() - 1);
+	stage.addEventListener('stagemousemove', function(e){
+		//shape.x = e.stageX - shape.diffX;
+		//shape.y = e.stageY - shape.diffY;
+
+		shape.x = e.stageX;
+		shape.y = e.stageY;
+	});
+	stage.addEventListener('stagemouseup', function (e){
+		console.log("mouse released");
+		var pt = shape.globalToLocal(stage.mouseX, stage.mouseY);
+		stage.removeAllEventListeners();
+		if (shape.hitTest(pt.x, pt.y)){
+			shape.removeEventListener('mousedown', startDrag);
+			createjs.Tween.get(shape).to({x: slot.x, y:slot.y}, 200, createjs.Ease.quadOut).call(removeChild);
+			document.getElementById("canvas").style.backgroundColor=shape.mycolor;
+
+		}else{
+			createjs.Tween.get(shape).to({x:shape.homeX, y:shape.homeY}, 200,
+				createjs.Ease.quadOut);
+		}
+	});
+}
+function startGame() {
+	createjs.Ticker.setFPS(60);
+	createjs.Ticker.addEventListener('tick', function (e) {
+		stage.update();
+	});
+}
+function removeChild(e){
+	stage.removeChild(e.target);	// removing the shape
+	var slot = stage.getChildByName("slot" + e.target.key);	//make
+	stage.removeChild(slot);
+
+}
+ </script>
+ </head>
+ <body onload="init();">
+ 	<canvas id="canvas" width=600 height=400 style="background-color:black"></canvas>
+ </body>
+ </html>
